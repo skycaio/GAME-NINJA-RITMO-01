@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ritmo Shinobi: Dança das Lâminas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="logo.png">
+</head>
+
+<body>
+
+  <div id="game-container">
+    <!-- Canvas Principal do Jogo (Cenário, Ninja, Inimigos e Partículas) -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Controles Rápidos do Canto Superior (Pausa e Áudio) -->
+    <div class="top-controls">
+      <button id="btn-pause" class="btn-icon" title="Pausar / Retomar (P / Esc)">⏸️</button>
+      <button id="btn-mute" class="btn-icon" title="Alternar Som">🔊</button>
+    </div>
+
+    <!-- HUD Sobreposto -->
+    <div id="hud" class="hidden">
+      <!-- HUD Superior: Progresso e Pontuação -->
+      <div class="hud-top">
+        <!-- Progresso da Música / Nível -->
+        <div class="progress-container">
+          <span id="song-title-display" class="song-title-display">Fase 1: Caminho do Bambuzal (80 BPM)</span>
+          <div class="progress-bar-bg">
+            <div id="progress-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Pontuação e Precisão -->
+        <div class="score-box">
+          <span class="score-title">PONTUAÇÃO</span>
+          <span id="score-display" class="score-value">0</span>
+          <span id="accuracy-display" class="accuracy-badge">100.0%</span>
+        </div>
+      </div>
+
+      <!-- HUD Central: Contador de Combos e Julgamento -->
+      <div class="hud-center">
+        <div id="combo-display" class="combo-display">
+          <div id="combo-number" class="combo-number">0</div>
+          <div class="combo-label">COMBO</div>
+        </div>
+        <div id="judgment-display" class="judgment-display">PERFEITO!</div>
+      </div>
+
+      <!-- Painel de Ritmo Vertical no Canto da Esquerda (Mais no Meio) -->
+      <div class="rhythm-corner-container">
+        <div class="rhythm-guide-text vertical-guide">
+          <div class="guide-lane-badge lane-top" title="Coluna Esquerda">ESQ: <strong class="key-badge">A</strong> <strong class="key-badge">Z</strong> <strong class="key-badge">←</strong></div>
+          <div class="guide-lane-badge lane-mid" title="Coluna Central">MEIO: <strong class="key-badge">S</strong> <strong class="key-badge">X</strong> <strong class="key-badge">ESPAÇO</strong></div>
+          <div class="guide-lane-badge lane-bot" title="Coluna Direita">DIR: <strong class="key-badge">D</strong> <strong class="key-badge">C</strong> <strong class="key-badge">→</strong></div>
+        </div>
+
+        <!-- Canvas Vertical das 3 Colunas de Ritmo -->
+        <div class="rhythm-bar-wrapper vertical-lane-panel">
+          <canvas id="rhythm-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- HUD Inferior Centro: Barra de Vitalidade Shinobi -->
+      <div class="hud-bottom-center">
+        <div class="health-container">
+          <div class="health-label">
+            <span>❤️ VITALIDADE SHINOBI</span>
+          </div>
+          <div class="health-bar-wrapper">
+            <div id="health-fill" class="health-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TELAS / MODAIS ================= -->
+
+    <!-- Tela Inicial / Menu com Seletor de 10 Fases -->
+    <!-- ================= MENU PRINCIPAL ================= -->
+    <div id="main-menu-modal" class="screen-modal">
+      <div class="modal-content main-menu-content">
+        <!-- Partículas decorativas -->
+        <div class="menu-particles" aria-hidden="true">
+          <span class="particle"></span><span class="particle"></span>
+          <span class="particle"></span><span class="particle"></span>
+          <span class="particle"></span>
+        </div>
+
+        <!-- Logo do jogo -->
+        <div class="main-menu-logo">
+          <img src="logo.png" alt="Ritmo Shinobi Logo" class="menu-logo-img">
+        </div>
+
+        <!-- Títulos -->
+        <div class="game-title-jp">刃の道 • SHINOBI NO MICHI</div>
+        <h1 class="game-title">RITMO SHINOBI</h1>
+        <div class="game-subtitle">DANÇA DAS LÂMINAS</div>
+
+        <!-- Divisor decorativo -->
+        <div class="menu-divider"><span></span><span>⚔</span><span></span></div>
+
+        <!-- Botões do menu principal -->
+        <nav class="main-menu-nav" aria-label="Menu Principal">
+          <button id="btn-main-play" class="btn-menu-item btn-menu-play">
+            <span class="btn-menu-icon">▶</span>
+            <span class="btn-menu-label">JOGAR</span>
+            <span class="btn-menu-hint">Selecione a fase e inicie</span>
+          </button>
+
+          <button id="btn-main-keybinds" class="btn-menu-item btn-menu-config">
+            <span class="btn-menu-icon">⌨</span>
+            <span class="btn-menu-label">CONFIGURAÇÕES DAS TECLAS</span>
+            <span class="btn-menu-hint">Remapeie os controles do ninja</span>
+          </button>
+
+          <button id="btn-main-quit" class="btn-menu-item btn-menu-quit">
+            <span class="btn-menu-icon">✕</span>
+            <span class="btn-menu-label">SAIR DO JOGO</span>
+            <span class="btn-menu-hint">Fechar o jogo</span>
+          </button>
+        </nav>
+
+        <!-- Versão / Rodapé -->
+        <div class="main-menu-footer">v1.0 · Ritmo Shinobi © 2026</div>
+      </div>
+    </div>
+
+    <!-- ================= CONFIGURAÇÕES DAS TECLAS ================= -->
+    <div id="keybind-modal" class="screen-modal hidden">
+      <div class="modal-content keybind-modal-content">
+        <div class="game-title-jp">操作設定 • CONFIGURAÇÕES</div>
+        <h2 class="result-header keybind-title">TECLAS DE CONTROLE</h2>
+
+        <p class="keybind-desc">Clique em um botão e pressione a tecla desejada para remapear.</p>
+
+        <div class="keybind-list" id="keybind-list">
+          <!-- Gerado pelo JS -->
+        </div>
+
+        <div class="keybind-status-bar" id="keybind-status-bar">Pronto</div>
+
+        <div class="modal-actions" style="margin-top:20px;">
+          <button id="btn-keybind-reset" class="btn-secondary">↺ RESTAURAR PADRÕES</button>
+          <button id="btn-keybind-back" class="btn-primary btn-keybind-back">✔ SALVAR E VOLTAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="menu-modal" class="screen-modal hidden">
+      <div class="modal-content menu-modal-content">
+        <div class="game-title-jp">刃の道 • SHINOBI NO MICHI</div>
+        <h1 class="game-title">RITMO SHINOBI</h1>
+        <div class="game-subtitle">DANÇA DAS LÂMINAS</div>
+
+        <!-- Seletor de 10 Fases -->
+        <div class="phases-section">
+          <div class="phases-header-row">
+            <span class="section-label">SELEÇÃO DE FASES • 10 DESAFIOS SHINOBI</span>
+            <span id="phase-counter-badge" class="phase-count-badge">FASE 1 DE 10</span>
+          </div>
+
+          <!-- Grade interativa com as 10 Fases -->
+          <div id="phases-grid" class="phases-grid">
+            <!-- Botões das 10 fases inseridos dinamicamente pelo JavaScript -->
+          </div>
+
+          <!-- Painel de Detalhes da Fase Atualmente Selecionada -->
+          <div id="selected-phase-card" class="selected-phase-card">
+            <div class="phase-card-top">
+              <div class="phase-title-group">
+                <span id="phase-card-number" class="phase-card-number">FASE 01</span>
+                <h3 id="phase-card-title" class="phase-card-title">Caminho do Bambuzal</h3>
+              </div>
+              <div class="phase-badges-group">
+                <span id="phase-card-diff" class="diff-tag">Iniciante</span>
+                <span id="phase-card-bpm" class="bpm-tag">80 BPM</span>
+              </div>
+            </div>
+            <p id="phase-card-desc" class="phase-card-desc">A floresta de bambu sussurra com o vento. Treine os
+              fundamentos da lâmina no tempo sagrado.</p>
+            <div class="phase-card-footer">
+              <span id="phase-card-enemy" class="phase-card-enemy">🗡️ Inimigo: <strong>Ronin Aprendiz</strong></span>
+              <span id="phase-card-record" class="phase-card-record">🏆 Melhor Pontuação: <strong>-</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-play" class="btn-primary">INICIAR FASE</button>
+
+        <!-- Instruções de Controle -->
+        <div class="controls-guide">
+          <div class="guide-item">
+            <span>🗡️ Ataque:</span>
+            <span class="key-badge">Espaço</span>
+            <span class="key-badge">Z / X</span>
+          </div>
+          <div class="guide-item">
+            <span>⏸️ Pausa:</span>
+            <span class="key-badge">P</span>
+            <span class="key-badge">Esc</span>
+          </div>
+          <div class="guide-item">
+            <span>📱 Celular / Mouse:</span>
+            <span class="key-badge">Toque na Tela</span>
+          </div>
+        </div>
+
+        <!-- Botão voltar ao menu principal -->
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button id="btn-back-to-main" class="btn-secondary" style="font-size:13px; letter-spacing:2px; padding:10px 24px;">
+            ← MENU PRINCIPAL
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela de Pausa (Modal) -->
+    <div id="pause-modal" class="screen-modal hidden">
+      <div class="modal-content pause-modal-content">
+        <div class="game-title-jp">一時停止 • PAUSA</div>
+        <h2 class="result-header pause-title">JOGO PAUSADO</h2>
+        <div id="pause-phase-display" class="pause-phase-display">Fase 1: Caminho do Bambuzal (80 BPM)</div>
+
+        <div class="stats-grid pause-stats-grid">
+          <div class="stat-item">
+            <span class="stat-name">Pontuação:</span>
+            <span id="pause-score" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Combo Atual:</span>
+            <span id="pause-combo" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Precisão:</span>
+            <span id="pause-accuracy" class="stat-val">100%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Inimigos Superados:</span>
+            <span id="pause-passed-notes" class="stat-val">0 / 0</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-resume-pause" class="btn-primary">CONTINUAR</button>
+          <button id="btn-retry-pause" class="btn-secondary">REINICIAR FASE</button>
+          <button id="btn-menu-pause" class="btn-secondary">SELEÇÃO DE FASES</button>
+        </div>
+
+        <div class="pause-shortcut-hint">
+          <span>Pressione <span class="key-badge">P</span> ou <span class="key-badge">ESC</span> para continuar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela de Game Over (Derrota) -->
+    <div id="gameover-modal" class="screen-modal hidden">
+      <div class="modal-content">
+        <div class="game-title-jp">敗北 • DERROTA</div>
+        <h2 class="result-header gameover-title">HONRA PERDIDA</h2>
+        <p style="color: #8b949e; margin-bottom: 20px;">Sua lâmina vacilou diante do ritmo implacável dos samurais.</p>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-name">Pontos Acumulados:</span>
+            <span id="go-score" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Maior Sequência:</span>
+            <span id="go-max-combo" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Inimigos Superados:</span>
+            <span id="go-passed-notes" class="stat-val">0 / 0</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-retry-gameover" class="btn-primary">TENTAR NOVAMENTE</button>
+          <button id="btn-menu-gameover" class="btn-secondary">SELEÇÃO DE FASES</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela de Vitória -->
+    <div id="victory-modal" class="screen-modal hidden">
+      <div class="modal-content">
+        <div class="game-title-jp">名誉ある勝利 • VITÓRIA</div>
+        <h2 class="result-header victory-title">VITÓRIA HONROSA</h2>
+
+        <div class="rank-display">
+          <div id="rank-badge" class="rank-badge rank-s">S</div>
+          <span style="font-size: 13px; letter-spacing: 2px; color: #ffcf40;">CLASSIFICAÇÃO DO SHINOBI</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-name">Pontuação Final:</span>
+            <span id="final-score" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Precisão Geral:</span>
+            <span id="final-accuracy" class="stat-val">100%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Combo Máximo:</span>
+            <span id="final-max-combo" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Cortes Perfeitos:</span>
+            <span id="count-perfect" class="stat-val" style="color: #ffcf40;">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Cortes Bons:</span>
+            <span id="count-good" class="stat-val" style="color: #00f0ff;">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Erros:</span>
+            <span id="count-miss" class="stat-val" style="color: #ff2a5f;">0</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-next-victory" class="btn-primary">PRÓXIMA FASE ➔</button>
+          <button id="btn-retry-victory" class="btn-secondary">REPETIR FASE</button>
+          <button id="btn-menu-victory" class="btn-secondary">SELEÇÃO DE FASES</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts do Jogo -->
+  <script src="js/menu.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/beatmaps.js"></script>
+  <script src="js/rhythm_bar.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/game.js"></script>
+</body>
+
+</html>
